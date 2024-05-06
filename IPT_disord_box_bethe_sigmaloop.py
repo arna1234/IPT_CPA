@@ -17,7 +17,6 @@ from scipy.fftpack import fft, ifft
 import pyximport; pyximport.install(language_level=3,setup_args={"include_dirs":np.get_include()})
 import auxiliaries
 
-
 sigma0 = np.matrix('1 0; 0 1')
 sigma1 = np.matrix('0 1; 1 0')
 sigma2 = np.matrix('0 -1j; 1j 0')
