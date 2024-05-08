@@ -1,0 +1,32 @@
+#main  control
+loops=50
+min_loops=1
+threshold=0.005
+zeroT=False
+mix=0.4 
+adaptiveMixing=True
+
+#technical stuff
+readold=True
+number_of_threads = 18
+debug =False
+
+#grids and model
+omega_max=6
+omegasteps =30001
+ksteps=21
+nbands=1
+cutoff =1
+ksum = False
+d = 1 
+l = 0.2
+model= bethe
+
+#filling control
+dopedMode=True
+CounterTerm=False
+dopedMode_type=1
+outputN=True 
+mu_tilde=0.0  
+fix_n=True
+n_aim=0.5
