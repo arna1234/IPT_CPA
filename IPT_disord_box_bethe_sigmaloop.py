@@ -3,6 +3,7 @@
 
 from scipy import integrate
 import math
+import cmath
 import numpy as np
 import os
 import sys
@@ -734,6 +735,20 @@ class Solver:
         self.n = getn(self.omega,self.g_csi,self.fermi,para)
 
 #+---------------------------------------------------------------------+
+#PURPOSE  : Interpolating integral for the disorder
+#+---------------------------------------------------------------------+
+
+def NumHilbert_disorder(z, weight, xi, sigmaxi):
+    HH = 0j
+    for ixi in range(len(xi) - 1):
+        AW = (weight[ixi]*xi[ixi+1] - weight[ixi+1]*xi[ixi]) / (xi[ixi+1] - xi[ixi])
+        BW = (weight[ixi+1] - weight[ixi]) / (xi[ixi+1] - xi[ixi])
+        Adis = (sigmaxi[ixi]*xi[ixi+1] - sigmaxi[ixi+1]*xi[ixi]) / (xi[ixi+1] - xi[ixi])
+        Bdis = (sigmaxi[ixi+1] - sigmaxi[ixi]) / (xi[ixi+1] - xi[ixi])
+        HH += (BW*(xi[ixi+1] - xi[ixi]) + (AW - BW*(z - Adis) / Bdis) * cmath.log((z - Adis + (1.0-Bdis)*xi[ixi+1]) / (z - Adis + (1.0-Bdis)*xi[ixi]))) / (1.0-Bdis)
+    return HH
+
+#+---------------------------------------------------------------------+
 #PURPOSE  : IPT iteration
 #+---------------------------------------------------------------------+
 
@@ -756,12 +771,15 @@ def IPT_loops(omega,hamiltonianList,sigma,fermi,mix0,number_of_threads,para):
     try:
         if dis==0.0:
             v=np.array([0.0], dtype=np.double)
+            prob=1.0
         else:
-            v = np.linspace(-dis, dis, 31)
-        prob = 1.0/len(v)   
+            v = np.linspace(-dis, dis,31)
+            prob = (1.0/(2.0*dis))*np.ones(len(v),dtype=np.double)
     except IOError:
         print("Error: impossible to read the disorder")
         sys.exit(6)
+
+    sigmaxi=np.zeros(len(v), dtype=np.complex)
 
     print('values for disorder=',v)
     print('probabilities=',prob)
@@ -810,7 +828,7 @@ def IPT_loops(omega,hamiltonianList,sigma,fermi,mix0,number_of_threads,para):
             counter=0
             S.solve(para,delta)
             incr=abs(S.n-S.n0)/2.0
-            print(S.n0, S.n, para.mu_tilde,"first")
+            #print(S.n0, S.n, para.mu_tilde,"first")
             errToZero = 0.0000001
             while searching==True :
                 if abs(S.n-S.n0)< errToZero: searching=False
@@ -829,11 +847,12 @@ def IPT_loops(omega,hamiltonianList,sigma,fermi,mix0,number_of_threads,para):
                         if S.n0 < S.n:
                             incr=abs(para.mu_tilde-mu_old)/2.0
                 counter+=1
-                print("counter mu tilde = ", counter, S.n, S.n0, para.mu_tilde)
                 if counter> 300:
                     searching=False
                     print( "DID NOT FIND MU_TILDE !!!",  S.n, S.n0, para.mu_tilde, para.mu,incr)
                     para.mu_tilde=para.mu
+            
+            print("counter mu tilde = ", counter, S.n, S.n0, para.mu_tilde)
             
             #save in memory for next iteration g_csi 
             g_csi_tot[:,:,:,i_csi] = S.g_csi[:,:,:]
@@ -842,7 +861,14 @@ def IPT_loops(omega,hamiltonianList,sigma,fermi,mix0,number_of_threads,para):
 
 
         # Calculate the average over the disorder of gloc
-        gloc = np.sum(g_csi_tot*prob, axis=-1)
+        #gloc = np.sum(g_csi_tot*prob, axis=-1)*abs(v[1]-v[0])
+        # Average with the linear interpolation
+        for band in range(0,para.nbands):
+             for w in range (0,len(omega)):
+                z = omega[w] + para.mu - delta[w,band,band]
+                sigmaxi[:] = s_csi_tot[w,band,band,:]
+                gloc[w,band,band] = NumHilbert_disorder(z, prob, v, sigmaxi)
+        #
 
         data1 = np.column_stack((np.real(omega),np.imag(gloc[:,0,0]),np.real(gloc[:,0,0])))
         filename1="gav_" + str(l) + ".dat"
