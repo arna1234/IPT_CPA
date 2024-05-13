@@ -847,6 +847,14 @@ def IPT_loops(omega,hamiltonianList,sigma,fermi,mix0,number_of_threads,para):
                         if S.n0 < S.n:
                             incr=abs(para.mu_tilde-mu_old)/2.0
                 counter+=1
+                #data1 = np.column_stack((np.real(omega),np.imag(S.g_csi[:,0,0]),np.real(S.g_csi[:,0,0])))
+                #filename1="g_csi"+str(para.csi)+ "it"+ str(l) + str(counter)+".dat"
+                #np.savetxt(filename1, data1)
+
+                #data1 = np.column_stack((np.real(omega),np.imag(S.sigma_csi[:,0,0]),np.real(S.sigma_csi[:,0,0])))
+                #filename1="s_csi"+str(para.csi)+ "it"+ str(l) + str(counter)+".dat"
+                #np.savetxt(filename1, data1)
+                
                 if counter> 300:
                     searching=False
                     print( "DID NOT FIND MU_TILDE !!!",  S.n, S.n0, para.mu_tilde, para.mu,incr)
@@ -858,7 +866,13 @@ def IPT_loops(omega,hamiltonianList,sigma,fermi,mix0,number_of_threads,para):
             g_csi_tot[:,:,:,i_csi] = S.g_csi[:,:,:]
             s_csi_tot[:,:,:,i_csi] = S.sigma_csi[:,:,:]
             mutilde_csi[i_csi] = para.mu_tilde
+            data1 = np.column_stack((np.real(omega),np.imag(S.g_csi[:,0,0]),np.real(S.g_csi[:,0,0])))
+            filename1="g_csi"+str(para.csi)+ "it"+ str(l) + ".dat"
+            np.savetxt(filename1, data1)
 
+            data1 = np.column_stack((np.real(omega),np.imag(S.sigma_csi[:,0,0]),np.real(S.sigma_csi[:,0,0])))
+            filename1="s_csi"+str(para.csi)+ "it"+ str(l) + ".dat"
+            np.savetxt(filename1, data1)
 
         # Calculate the average over the disorder of gloc
         #gloc = np.sum(g_csi_tot*prob, axis=-1)*abs(v[1]-v[0])
